@@ -93,14 +93,17 @@ func NewMongo(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		m.AclsCollection = aclsCollection
 	}
 
-	addr := fmt.Sprintf("mongodb://%s:%s", m.Host, m.Port)
-
 	to := 60 * time.Second
 	opts := options.ClientOptions{
 		ConnectTimeout: &to,
 	}
 
-	opts.ApplyURI(addr)
+	if srvUri, ok := authOpts["mongo_srv"]; ok {
+		opts.ApplyURI(srvUri)
+	} else {
+		addr := fmt.Sprintf("mongodb://%s:%s", m.Host, m.Port)
+		opts.ApplyURI(addr)
+	}
 
 	if m.Username != "" && m.Password != "" {
 		opts.Auth = &options.Credential{
