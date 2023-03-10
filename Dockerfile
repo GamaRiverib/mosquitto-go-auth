@@ -98,12 +98,13 @@ RUN set -ex; \
     apt update; \
     apt install -y libc-ares2 openssl uuid tini wget libssl-dev libcjson-dev
 
-RUN mkdir -p /var/lib/mosquitto /var/log/mosquitto
+RUN mkdir -p /var/lib/mosquitto /var/log/mosquitto /var/run/mosquitto
 RUN set -ex; \
     groupadd mosquitto; \
     useradd -s /sbin/nologin mosquitto -g mosquitto -d /var/lib/mosquitto; \
     chown -R mosquitto:mosquitto /var/log/mosquitto/; \
-    chown -R mosquitto:mosquitto /var/lib/mosquitto/
+    chown -R mosquitto:mosquitto /var/lib/mosquitto/; \
+    chown -R mosquitto:mosquitto /var/run/mosquitto/
 
 #Copy confs, plugin so and mosquitto binary.
 COPY --from=mosquitto_builder /app/mosquitto/ /mosquitto/
@@ -118,9 +119,11 @@ COPY --from=mosquitto_builder /usr/local/bin/mosquitto_sub /usr/bin/mosquitto_su
 COPY --from=mosquitto_builder /usr/local/bin/mosquitto_pub /usr/bin/mosquitto_pub
 COPY --from=mosquitto_builder /usr/local/bin/mosquitto_rr /usr/bin/mosquitto_rr
 
+VOLUME ["/etc/mosquitto/config", "/etc/mosquitto/certs"]
+
 RUN ldconfig;
 
-EXPOSE 1883 1884
+EXPOSE 1883 8083 8883
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD [ "/usr/sbin/mosquitto" ,"-c", "/etc/mosquitto/mosquitto.conf" ]
+CMD [ "/usr/sbin/mosquitto" ,"-c", "/etc/mosquitto/config/mosquitto.conf" ]
